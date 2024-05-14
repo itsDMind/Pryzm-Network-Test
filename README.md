@@ -4,13 +4,13 @@ Pryzm Network Test
 
 ## Setting up development environment
 
-### Installing Nix
+### Install Nix
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-### Entering development environment
+### Enter development environment
 
 ```bash
 nix develop --impure
@@ -18,7 +18,7 @@ nix develop --impure
 
 It will enter into a virtual environment and install most of the development requirements.
 
-Installing other requirements:
+Install other requirements:
 
 ```bash
 install-cosmwasm-check
@@ -28,7 +28,7 @@ install-cosmwasm-check
 install-wasmd
 ```
 
-After that commands `cosmwasm-check` and `wasmd` would be available.
+After those commands, `cosmwasm-check` and `wasmd` would be available.
 
 For exiting from virtual environment just run `exit`.
 
