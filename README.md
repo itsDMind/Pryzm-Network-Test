@@ -1,3 +1,7 @@
+# Pryzm-Test
+
+Pryzm Network Test
+
 ## Setting up development environment
 
 ### Installing Nix
