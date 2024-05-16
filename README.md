@@ -21,14 +21,18 @@ It will enter into a virtual environment and install most of the development req
 Install other requirements:
 
 ```bash
-install-cosmwasm-check
+dev-install-cosmwasm-check
 ```
 
 ```bash
-install-wasmd
+dev-install-wasmd
 ```
 
-After those commands, `cosmwasm-check` and `wasmd` would be available.
+```bash
+dev-install-injective
+```
+
+After those commands, `cosmwasm-check`, `wasmd`, `injectived` and `dev-setup-injective` would be available.
 
 For exiting from virtual environment just run `exit`.
 
@@ -52,12 +56,6 @@ cargo wasm
 
 For production purpose:
 
-```bash
-docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.0
-```
 
 ### Deploy
 
