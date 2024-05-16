@@ -12,9 +12,7 @@ We expect the reward contract to be:
 - Readable
 - Have tests
 
-## Example
-
-### Example:
+## Example:
 
 User A sends 10 Wtoken to the reward contract and user B sends 90 Wtoken to the reward contract, user C sends 100 Wtoken a day later. The contract receives 1000USDsim, therefore, 
 
@@ -31,6 +29,9 @@ user A should receive 50 USDsim
 user B should receive 450 USDsim 
 
 user C should receive 500 USDsim
+
+## Pryzm Testnet User Guide
+[Pryzm Testnet User Guide](https://docs.pryzm.zone/overview/guide/testnet-guide/)
 
 ## Setting up development environment
 
