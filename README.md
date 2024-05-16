@@ -85,13 +85,48 @@ For debug purpose:
 cargo wasm
 ```
 
+After that `<contract>.wasm` would be avaiable on `target/wasm32-unknown-unknown/release/` directory
+
 For production purpose:
 
+```bash
+docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/optimizer:0.15.0
+```
 
-### Deploy
+It will generate optimized build for production purpose.
 
-TODO
+After that `<contract>.wasm` would be available in `artifacts` directory.
 
-### Run
+## Project structure
 
-TODO
+We followed the best practices project structure by cosmwasm book and cw20base project.
+
+here is the summery:
+
+```
+wtoken
+├── Cargo.toml
+└── src
+    ├── bin
+    │   └── schema.rs   -- to see json schema of contracts (instanciate, query, execute)
+    ├── contract.rs     -- instanciate, query, execute entry points
+    ├── error.rs        -- define all errors
+    ├── lib.rs          -- exporting modules
+    └── msg.rs          -- message types that use in contract.rs
+```
+
+```
+reward-contract
+├── Cargo.toml
+└── src
+    ├── bin
+    │   └── schema.rs
+    ├── contract.rs
+    ├── error.rs
+    ├── lib.rs
+    ├── msg.rs
+    └── state.rs        -- persistane state
+```

@@ -26,7 +26,7 @@ in
   # processes.hello.exec = "hello";
 
   scripts = {
-    injectived.exec = "DIR=$DEVENV_ROOT/.injective && LD_LIBRARY_PATH=$DIR $DIR/injectived $@ --home $DIR/temp";
+    injectived.exec = "DIR=$DEVENV_ROOT/.injective && LD_LIBRARY_PATH=$DIR $DIR/injectived $@ --home $DIR/injective-home";
     wasmd.exec = "$DEVENV_ROOT/.wasmd/wasmd $@";
 
     dev-setup-injective.exec = "$DEVENV_ROOT/.injective/injective-chain-releases/scripts/setup.sh $@";
