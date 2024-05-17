@@ -5,7 +5,6 @@ let
   injective_release =
     "https://github.com/InjectiveLabs/injective-chain-releases/releases/download/v1.12.1-1705909076/linux-amd64.zip";
   # "https://github.com/InjectiveLabs/injective-chain-releases/releases/download/v0.4.19-1652947015/linux-amd64.zip";
-
 in
 {
   languages.rust = {
@@ -20,6 +19,7 @@ in
   packages = [
     # # package example
     # pkgs.hello
+    pkgs.python3
   ];
 
   # # processes example
@@ -50,6 +50,9 @@ in
 
     dev-remove-wasmd.exec = "rm -rf $DEVENV_ROOT/.wasmd";
     dev-remove-injective.exec = "rm -rf $DEVENV_ROOT/.injective";
+
+    # OSMOSIS requirements
+    dev-install-osmosis.exec = "curl -sL https://get.osmosis.zone/install > i.py && python3 i.py";
   };
 
   enterShell = ''
