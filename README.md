@@ -31,6 +31,7 @@ user B should receive 450 USDsim
 user C should receive 500 USDsim
 
 ## Pryzm Testnet User Guide
+
 [Pryzm Testnet User Guide](https://docs.pryzm.zone/overview/guide/testnet-guide/)
 
 ## Setting up development environment
@@ -115,8 +116,18 @@ After that `wtoken.wasm` would be available in `artifacts` directory.
 Check artifact:
 
 ```bash
-cosmwasm-check wtoken/artifacts/wtoken.wasm
+cosmwasm-check artifacts/wtoken.wasm
 ```
+
+They are the same for reward-contract.
+
+## Deployment
+
+
+## Reward contract logic
+
+We start reward distribution from the first receiving USDsim. 
+As far as we know, USDsim will receive every 24 hours so upon received we will calculate and distribute reward.
 
 ## Project structure
 
