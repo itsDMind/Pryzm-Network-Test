@@ -67,9 +67,15 @@ After those commands, `cosmwasm-check`, `wasmd`, `injectived` and `dev-setup-inj
 
 For exiting from virtual environment just run `exit`.
 
-## Running Project
+## Building Project
 
 For each contract:
+
+For example for Wtoken contract:
+
+```bash
+cd wtoken
+```
 
 ### Test
 
@@ -85,7 +91,13 @@ For debug purpose:
 cargo wasm
 ```
 
-After that `<contract>.wasm` would be avaiable on `target/wasm32-unknown-unknown/release/` directory
+After that `wtoken.wasm` would be avaiable on `target/wasm32-unknown-unknown/release/` directory
+
+Check artifact:
+
+```bash
+cosmwasm-check wtoken/target/wasm32-unknown-unknown/release/wtoken.wasm
+```
 
 For production purpose:
 
@@ -98,7 +110,13 @@ docker run --rm -v "$(pwd)":/code \
 
 It will generate optimized build for production purpose.
 
-After that `<contract>.wasm` would be available in `artifacts` directory.
+After that `wtoken.wasm` would be available in `artifacts` directory.
+
+Check artifact:
+
+```bash
+cosmwasm-check wtoken/artifacts/wtoken.wasm
+```
 
 ## Project structure
 

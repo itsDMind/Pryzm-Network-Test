@@ -1,12 +1,14 @@
 use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{REMAINING_USDSIM, USDSIM_CONTRACT, WTOEKN_TOTAL_BALANCE, WTOKEN_CONTRACT},
+    state::{REMAINING_USDSIM, WTOEKN_TOTAL_BALANCE, WTOKEN_CONTRACT},
 };
 
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
 };
+
+const USDSIM_DENOM: &str = "usdsim";
 
 pub fn instantiate(
     deps: DepsMut,
@@ -14,16 +16,11 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let InstantiateMsg {
-        wtoken_contract,
-        usdsim_contract,
-    } = msg;
+    let InstantiateMsg { wtoken_contract } = msg;
     let store = deps.storage;
     let wtoken_addr = deps.api.addr_validate(&wtoken_contract)?;
-    let usdsim_addr = deps.api.addr_validate(&usdsim_contract)?;
 
     WTOKEN_CONTRACT.save(store, &wtoken_addr)?;
-    USDSIM_CONTRACT.save(store, &usdsim_addr)?;
     WTOEKN_TOTAL_BALANCE.save(store, &0u128.into())?;
     REMAINING_USDSIM.save(store, &0u128.into())?;
 
@@ -68,43 +65,39 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        Receive(receive_msg) => exec::receive(deps, info, receive_msg),
+        Receive(receive_msg) => exec::receive_wtoken(deps, info, receive_msg),
+        ReceiveUsdsim {} => exec::receive_usdsim(deps, info),
     }
 }
 
 mod exec {
-    use cosmwasm_std::{Order, Uint128};
+    use cosmwasm_std::{coins, BankMsg, Order, Uint128};
     use cw20::Cw20ReceiveMsg;
 
-    use crate::{
-        msg::TransferUsdsimMsg,
-        state::{
-            UsdsimBalance, WtokenBalance, REMAINING_USDSIM, USDSIM_CONTRACT, WTOEKN_TOTAL_BALANCE,
-            WTOKEN_BALANCES,
-        },
+    use crate::state::{
+        UsdsimBalance, WtokenBalance, REMAINING_USDSIM, WTOEKN_TOTAL_BALANCE, WTOKEN_BALANCES,
     };
 
     use super::*;
 
-    pub fn receive(
+    pub fn receive_wtoken(
         deps: DepsMut,
         info: MessageInfo,
         msg: Cw20ReceiveMsg,
     ) -> Result<Response, ContractError> {
         let wtoken_contract = WTOKEN_CONTRACT.load(deps.storage)?;
-        let usdsim_contract = USDSIM_CONTRACT.load(deps.storage)?;
         let sender = deps.api.addr_validate(&msg.sender)?;
 
-        match info.sender {
-            x if x == wtoken_contract => receive_wtoken(deps.storage, sender, msg.amount),
-            x if x == usdsim_contract => receive_usdsim(deps.storage, msg.amount),
-            _ => Err(ContractError::InvalidSender {
+        if info.sender == wtoken_contract {
+            receive_wtoken_inner(deps.storage, sender, msg.amount)
+        } else {
+            Err(ContractError::InvalidWtokenAddress {
                 address: info.sender,
-            }),
+            })
         }
     }
 
-    fn receive_wtoken(
+    fn receive_wtoken_inner(
         storage: &mut dyn Storage,
         sender: Addr,
         amount: Uint128,
@@ -129,7 +122,17 @@ mod exec {
     }
 
     // We assume receiving USDsim every 24 hours
-    fn receive_usdsim(
+    pub fn receive_usdsim(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+        let sent_usdsim = info.funds.iter().find(|coin| coin.denom == USDSIM_DENOM);
+
+        if let Some(coin) = sent_usdsim {
+            receive_usdsim_inner(deps.storage, coin.amount)
+        } else {
+            Err(ContractError::NoUsdsimTokensSent)
+        }
+    }
+
+    fn receive_usdsim_inner(
         storage: &mut dyn Storage,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
@@ -137,7 +140,6 @@ mod exec {
             return Ok(Response::new());
         }
 
-        let usdsim_contract = USDSIM_CONTRACT.load(storage)?;
         let total_balance = WTOEKN_TOTAL_BALANCE.load(storage)?;
         let remaining_usdsim = REMAINING_USDSIM.load(storage)?;
 
@@ -147,15 +149,12 @@ mod exec {
                 (Response::new(), amount + remaining_usdsim.0),
                 |(resp, remaining_amount), item| -> Result<_, ContractError> {
                     let (recipient_addr, balance) = item?;
-                    let partial_amount = balance.0.checked_mul(amount)? / total_balance.0;
-                    let resp = resp.add_message(
-                        TransferUsdsimMsg {
-                            recipient: recipient_addr.into(),
-                            amount: partial_amount,
-                        }
-                        .into_cosmos_msg(&usdsim_contract)?,
-                    );
-                    Ok((resp, remaining_amount - partial_amount))
+                    let reward_amount = balance.0.checked_mul(amount)? / total_balance.0;
+                    let resp = resp.add_message(BankMsg::Send {
+                        to_address: recipient_addr.into(),
+                        amount: coins(reward_amount.into(), USDSIM_DENOM),
+                    });
+                    Ok((resp, remaining_amount - reward_amount))
                 },
             )?;
 
@@ -168,7 +167,7 @@ mod exec {
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        from_json,
+        coins, from_json,
         testing::{mock_dependencies_with_balance, mock_env, mock_info, MockApi},
         Addr,
     };
@@ -193,10 +192,6 @@ mod tests {
     }
 
     lazy_static! {
-        static ref USDSIM_ADDRESS: String = {
-            let mock_api = MockApi::default();
-            mock_api.addr_make("usdsim-address").to_string()
-        };
         static ref WTOKEN_ADDRESS: String = {
             let mock_api = MockApi::default();
             mock_api.addr_make("wtoken-address").to_string()
@@ -205,7 +200,6 @@ mod tests {
 
     fn do_instantiation(mut deps: DepsMut) {
         let instantiate_msg = InstantiateMsg {
-            usdsim_contract: USDSIM_ADDRESS.clone(),
             wtoken_contract: WTOKEN_ADDRESS.clone(),
         };
         let info = mock_info("creator", &[]);
@@ -235,12 +229,8 @@ mod tests {
         amount: u128,
     ) -> Result<Response, ContractError> {
         let env = mock_env();
-        let info = mock_info(&USDSIM_ADDRESS, &[]);
-        let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
-            sender: sender.into(),
-            amount: amount.into(),
-            msg: Binary::default(),
-        });
+        let info = mock_info(sender, &coins(amount, USDSIM_DENOM));
+        let msg = ExecuteMsg::ReceiveUsdsim {};
         execute(deps, env.clone(), info, msg)
     }
 
@@ -249,7 +239,6 @@ mod tests {
         let mut deps = mock_dependencies_with_balance(&[]);
 
         let instantiate_msg = InstantiateMsg {
-            usdsim_contract: USDSIM_ADDRESS.clone(),
             wtoken_contract: WTOKEN_ADDRESS.clone(),
         };
         let info = mock_info("creator", &[]);
@@ -380,7 +369,7 @@ mod tests {
 
         assert_eq!(
             err,
-            ContractError::InvalidSender {
+            ContractError::InvalidWtokenAddress {
                 address: Addr::unchecked(not_a_wtoken_nor_usdsim_addr)
             },
         );

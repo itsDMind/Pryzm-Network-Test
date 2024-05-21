@@ -7,10 +7,12 @@ pub enum ContractError {
     StdError(#[from] StdError),
     #[error("{0}")]
     OverflowError(#[from] OverflowError),
-    #[error("{address} is not a sender of wtoken nor usdsim")]
-    InvalidSender { address: Addr },
+    #[error("{address} is not wtoken address")]
+    InvalidWtokenAddress { address: Addr },
     #[error("zero amount received")]
     ZeroAmountReceived,
+    #[error("No usdsim tokens sent")]
+    NoUsdsimTokensSent,
 }
 
 pub type ContractResult<T> = Result<T, ContractError>;
